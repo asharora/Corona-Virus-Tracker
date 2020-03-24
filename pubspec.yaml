@@ -21,6 +21,7 @@ dependencies:
     sdk: flutter
   http: ^0.12.0+4
   google_maps_flutter : ^0.5.25
+  flutter_search_panel: ^1.0.1
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
@@ -60,9 +61,9 @@ flutter:
   fonts:
       - family: Roboto
         fonts:
-          - asset: fonts/Roboto-Regular.ttf
-          - asset: fonts/Roboto-Italic.ttf
-          - asset: fonts/Roboto-Light.ttf
+          - asset: assets/fonts/Roboto/Roboto-Regular.ttf
+          - asset: assets/fonts/Roboto/Roboto-Italic.ttf
+          - asset: assets/fonts/Roboto/Roboto-Light.ttf
             style: italic
   #   - family: Trajan Pro
   #     fonts:

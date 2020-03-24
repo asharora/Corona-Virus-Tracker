@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/animation.dart';
+import 'package:corona_virus_tracker/data.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -13,10 +14,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
       home: MyHomePage(),
     );
   }
@@ -28,20 +25,24 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Future<List<location>> locations;
-  List<location> locs; // get detail of corona cases
-  List<location> loc = [];
+  Future<Fetch_data> _fetch_data; // fetchded data is stored
+  List<location> locs; // get detail of each corona cases
+  List<location> loc = []; // user data that is printed
+  List<String> countries = [];
+  List<String> provinces = [];
+
   MapType mapType = MapType.normal;
   int confirmed = 0;
   int deaths = 0;
   int recovered = 0;
   var _counrtycontroller = TextEditingController();
   var _provincecontroller = TextEditingController();
-
+  int flag = 0; //// this is to check show_case called or not
+  double h = 325;
   @override
   void initState() {
     super.initState();
-    locations = fetchdata();
+    _fetch_data = fetchdata();
   }
 
   @override
@@ -52,32 +53,132 @@ class _MyHomePageState extends State<MyHomePage> {
   GoogleMapController mapController;
   List<Marker> allMarkers = [];
 
-  final _marker = Marker(
-    markerId: MarkerId("BVPIEEE"),
-    position: LatLng(28.6758656, 77.1110182),
-    infoWindow: InfoWindow(
-      title: "BVPIEEE",
-      snippet:
-          " A-4 Block, Baba Ramdev Marg, Shiva Enclave, Paschim Vihar, New Delhi, Delhi 110063",
-    ),
-  );
-
-  Future<List<location>> fetchdata() async {
+  Future<Fetch_data> fetchdata() async {
     var response = await http
         .get('https://coronavirus-tracker-api.herokuapp.com/v2/locations');
     List<location> locations = [];
+    List<String> countrys = [];
+    List<String> provinces = [];
     if (response.statusCode == 200) {
       Map<dynamic, dynamic> map = json.decode(response.body);
       //  List<Map<dynamic,dynamic>> loc=map['locations'];
       for (int i = 0; i < map['locations'].length; i++) {
         locations.add(location.fromJson(map['locations'][i]));
+        countrys.add(locations[i].country);
+        provinces.add(locations[i].province);
       }
     }
-    return locations;
+    return Fetch_data(locations, countrys, provinces);
   }
 
-  void pressed(var globalkey) {
+  void show_SnackBar(String det, BuildContext context) {
+    Scaffold.of(context).showSnackBar(SnackBar(
+      content: Text(
+        "$det",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 15,
+        ),
+      ),
+      backgroundColor: Colors.blueGrey,
+      duration: Duration(seconds: 1),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(25), topRight: Radius.circular(25))),
+    ));
+  }
+
+  void Map_CameraUpdate(double lat, double long) {
+    mapController.animateCamera(CameraUpdate.newLatLng(LatLng(lat, long)));
+  }
+
+  Widget show_case_detail() {
+    return Container(
+      width: 250,
+      height: 200,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: loc.length,
+        itemBuilder: (BuildContext context, index) {
+          return Container(
+            decoration: BoxDecoration(),
+            width: 250,
+            child: Card(
+              color: Colors.blueGrey[100],
+              elevation: 20,
+              child: Column(
+                children: <Widget>[
+                  Card(
+                    child: loc[index].province == ''
+                        ? null
+                        : Text(
+                            'Province = ${loc[index].province}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontStyle: FontStyle.italic),
+                          ),
+                  ),
+                  Text('\nConfirmed Cases :  \n${loc[index].confirmed}\n',
+                      textAlign: TextAlign.center),
+                  Text('Death Cases :\n${loc[index].deaths}\n',
+                      textAlign: TextAlign.center),
+                  Text('Recovered Cases : \n${loc[index].recovered}\n',
+                      textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget Show_DropDown(List<String> parts, String det) {
+    // return TextField(
+    //     controller: controller,
+    //     keyboardType: TextInputType.text,
+    //     decoration: InputDecoration(
+    //       labelText: "$det",
+    //       icon: Icon(Icons.ac_unit),
+    //     ));
+
+    return DropdownButton(
+      isExpanded: true,
+      hint: Text("$det"),
+      icon: Icon(Icons.ac_unit),
+      elevation: 10,
+      //    value: selectedValue,
+      items: parts.map((part) {
+        return DropdownMenuItem(
+          child: Text("$part"),
+          value: part,
+        );
+      }).toList(),
+      onChanged: (val) {
+        setState(() {
+          //    selectedValue=val;
+        });
+      },
+    );
+  }
+
+  void pressed(BuildContext context) {
     List<location> temp_loc = [];
+
+    setState(() {
+      allMarkers.clear();
+      loc = temp_loc;
+    });
+    if (_counrtycontroller.text == '') {
+      show_SnackBar("please enter the country", context);
+      setState(() {
+        flag = 0;
+        h = 325;
+        Map_CameraUpdate(28.6758656, 77.1110182);
+      });
+      return;
+    }
     if (_counrtycontroller.text != '') {
       setState(() {
         temp_loc = (locs).where((location) {
@@ -106,16 +207,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       loc = temp_loc;
-      allMarkers.clear();
     });
 
+    if (loc.length == 0) {
+      setState(() {
+        flag = 0;
+        h = 325;
+      });
+      show_SnackBar("Data not available !!!!", context);
+      Map_CameraUpdate(28.6758656, 77.1110182);
+      return;
+    }
+
+    setState(() {
+      flag = 1;
+      h = 530;
+    });
     double lat = double.parse(loc[0].latitude);
     double long = double.parse(loc[0].longitude);
     for (int i = 0; i < loc.length; i++) {
       setState(() {
         if (i == 0) {
-          mapController
-              .animateCamera(CameraUpdate.newLatLng(LatLng(lat, long)));
+          Map_CameraUpdate(lat, long);
         }
         allMarkers.add(Marker(
             markerId: MarkerId("$i"),
@@ -123,7 +236,7 @@ class _MyHomePageState extends State<MyHomePage> {
             infoWindow: InfoWindow(
                 title: loc[i].province == '' ? loc[i].country : loc[i].province,
                 snippet:
-                    "Confirmed Cases = ${loc[i].confirmed} \nDeaths = ${loc[i].deaths}\n Recovered = ${loc[i].recovered}"),
+                    "Confirmed Cases = ${loc[i].confirmed} , Deaths = ${loc[i].deaths} , Recovered = ${loc[i].recovered}"),
             position: LatLng(double.parse(loc[i].latitude),
                 double.parse(loc[i].longitude))));
       });
@@ -132,7 +245,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var globalkey;
     return Scaffold(
         drawer: Drawer(),
         resizeToAvoidBottomInset: false,
@@ -144,19 +256,22 @@ class _MyHomePageState extends State<MyHomePage> {
                   bottomLeft: Radius.elliptical(50, 50),
                   bottomRight: Radius.elliptical(50, 50))),
         ),
-        key: globalkey,
         backgroundColor: Colors.blueGrey[100],
         body: FutureBuilder(
-            future: locations,
+            future: _fetch_data,
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                locs = snapshot.data;
+                locs = snapshot.data.loc;
+                countries = snapshot.data.countrys;
+                provinces = snapshot.data.provinces;
+                print(countries);
+                print(provinces);
 
                 return SingleChildScrollView(
                   child: Column(
                     children: <Widget>[
                       Container(
-                        height: 580,
+                        height: h,
                         width: 600,
                         padding: EdgeInsets.all(5),
                         margin: EdgeInsets.only(left: 20, right: 20, top: 20),
@@ -177,91 +292,23 @@ class _MyHomePageState extends State<MyHomePage> {
                                     left: 20, right: 20, top: 40, bottom: 40),
                                 child: Column(
                                   children: <Widget>[
-                                    TextField(
-                                        controller: _counrtycontroller,
-                                        keyboardType: TextInputType.text,
-                                        decoration: InputDecoration(
-                                          hintText: "Select the Country",
-                                          icon: Icon(Icons.ac_unit),
-                                        )),
+                                    Show_DropDown(
+                                        countries, "Select the Country"),
                                     Container(
-                                      margin: EdgeInsets.only(
-                                        top: 30,
-                                        bottom: 30,
-                                      ),
+                                      height: 20,
                                     ),
-                                    TextField(
-                                        controller: _provincecontroller,
-                                        keyboardType: TextInputType.text,
-                                        decoration: InputDecoration(
-                                            hintText: "Select the Province",
-                                            icon: Icon(Icons.ac_unit))),
+                                    Show_DropDown(
+                                        provinces, "Select the Provinces"),
                                     Container(
-                                      margin: EdgeInsets.only(
-                                        top: 25,
-                                        bottom: 30,
-                                      ),
+                                      height: 20,
                                     ),
+                                    flag == 1 ? show_case_detail() : Text(""),
                                     Container(
-                                      width: 250,
-                                      height: 200,
-                                      
-                                  
-                                      child: ListView.builder(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: loc.length,
-                                        itemBuilder:
-                                            (BuildContext context, index) {
-                                          return Container(
-                                            decoration: BoxDecoration(
-                                            
-                                            ),
-                                            width: 250,
-                                            child: Card(
-                                              color: Colors.blueGrey[100],
-                                              elevation: 20,
-                                              child: Column(
-                                                children: <Widget>[
-                                                   Card(
-                                                      child: loc[index]
-                                                                  .province ==
-                                                              ''
-                                                          ? null
-                                                          : Text(
-                                                              'Province = ${loc[index].province}',
-                                                              textAlign: TextAlign
-                                                                  .center,style: TextStyle(fontFamily: 'Roboto',fontStyle: FontStyle.italic),
-                                                            ),
-                                                    ),
-                                                   Text(
-                                                        '\nConfirmed Cases :  \n${loc[index].confirmed}\n',
-                                                        textAlign:
-                                                            TextAlign.center),
-                                                  Text(
-                                                        'Death Cases :\n${loc[index].deaths}\n',
-                                                        textAlign:
-                                                            TextAlign.center),
-                                                  Text(
-                                                        'Recovered Cases : \n${loc[index].recovered}\n',
-                                                        textAlign:
-                                                            TextAlign.center),
-                                                  
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: EdgeInsets.only(
-                                        top: 0,
-                                        bottom: 20,
-                                      ),
+                                      height: 20,
                                     ),
                                     RaisedButton(
                                       onPressed: () {
-                                        pressed(globalkey);
+                                        pressed(context);
                                       },
                                       child: Text("submit"),
                                       splashColor: Colors.lightBlueAccent,
