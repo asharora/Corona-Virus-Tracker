@@ -35,10 +35,11 @@ class _MyHomePageState extends State<MyHomePage> {
   int confirmed = 0;
   int deaths = 0;
   int recovered = 0;
-  var _counrtycontroller = TextEditingController();
-  var _provincecontroller = TextEditingController();
+  String _counrtycontroller;
+  String _provincecontroller;
   int flag = 0; //// this is to check show_case called or not
   double h = 325;
+  
   @override
   void initState() {
     super.initState();
@@ -56,16 +57,22 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<Fetch_data> fetchdata() async {
     var response = await http
         .get('https://coronavirus-tracker-api.herokuapp.com/v2/locations');
+      
     List<location> locations = [];
     List<String> countrys = [];
     List<String> provinces = [];
     if (response.statusCode == 200) {
       Map<dynamic, dynamic> map = json.decode(response.body);
+      
       //  List<Map<dynamic,dynamic>> loc=map['locations'];
       for (int i = 0; i < map['locations'].length; i++) {
         locations.add(location.fromJson(map['locations'][i]));
-        countrys.add(locations[i].country);
-        provinces.add(locations[i].province);
+       if(countrys.contains(locations[i].country)==false){
+          countrys.add(locations[i].country);
+       }
+        if(provinces.contains(locations[i].province)==false && locations[i].province !=''){
+          provinces.add(locations[i].province);
+       }
       }
     }
     return Fetch_data(locations, countrys, provinces);
@@ -134,7 +141,8 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget Show_DropDown(List<String> parts, String det) {
+  
+  Widget Show_DropDown(List<String> parts, String det,int f) {
     // return TextField(
     //     controller: controller,
     //     keyboardType: TextInputType.text,
@@ -142,25 +150,48 @@ class _MyHomePageState extends State<MyHomePage> {
     //       labelText: "$det",
     //       icon: Icon(Icons.ac_unit),
     //     ));
-
+    if(f==1){
     return DropdownButton(
       isExpanded: true,
-      hint: Text("$det"),
+      hint: Text("Select the Country"),
+      value: _counrtycontroller,
       icon: Icon(Icons.ac_unit),
-      elevation: 10,
       //    value: selectedValue,
       items: parts.map((part) {
-        return DropdownMenuItem(
+        return DropdownMenuItem<String>(
           child: Text("$part"),
           value: part,
         );
       }).toList(),
-      onChanged: (val) {
+      onChanged: (String val) {
         setState(() {
-          //    selectedValue=val;
+          _counrtycontroller=val;
+        });
+      },
+    );}
+    else{
+      return DropdownButton(
+      
+      isExpanded: true,
+      hint: Text("Select the province"),
+      value: _provincecontroller,
+      
+      icon: Icon(Icons.ac_unit),
+      //    value: selectedValue,
+      items: parts.map((part) {
+        return DropdownMenuItem<String>(
+
+          child: Text("$part"),
+          value: part,
+        );
+      }).toList(),
+      onChanged: (String val) {
+        setState(() {
+          _provincecontroller=val;
         });
       },
     );
+    }
   }
 
   void pressed(BuildContext context) {
@@ -170,7 +201,7 @@ class _MyHomePageState extends State<MyHomePage> {
       allMarkers.clear();
       loc = temp_loc;
     });
-    if (_counrtycontroller.text == '') {
+    if (_counrtycontroller == null) {
       show_SnackBar("please enter the country", context);
       setState(() {
         flag = 0;
@@ -179,10 +210,10 @@ class _MyHomePageState extends State<MyHomePage> {
       });
       return;
     }
-    if (_counrtycontroller.text != '') {
+    if (_counrtycontroller != null) {
       setState(() {
         temp_loc = (locs).where((location) {
-          if (location.country == _counrtycontroller.text) {
+          if (location.country == _counrtycontroller) {
             return true;
           } else {
             return false;
@@ -190,11 +221,11 @@ class _MyHomePageState extends State<MyHomePage> {
         }).toList();
       });
     }
-
-    if (_provincecontroller.text != '') {
+    
+    if (_provincecontroller != null) {
       setState(() {
         List<location> loct = (temp_loc).where((location) {
-          if (location.province == _provincecontroller.text) {
+          if (location.province == _provincecontroller) {
             return true;
           } else {
             return false;
@@ -221,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     setState(() {
       flag = 1;
-      h = 530;
+      h = 520;
     });
     double lat = double.parse(loc[0].latitude);
     double long = double.parse(loc[0].longitude);
@@ -241,6 +272,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 double.parse(loc[i].longitude))));
       });
     }
+   setState(() {
+     
+   });
   }
 
   @override
@@ -264,8 +298,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 locs = snapshot.data.loc;
                 countries = snapshot.data.countrys;
                 provinces = snapshot.data.provinces;
-                print(countries);
-                print(provinces);
+                // print(countries);
+                // print(provinces);
 
                 return SingleChildScrollView(
                   child: Column(
@@ -293,12 +327,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                 child: Column(
                                   children: <Widget>[
                                     Show_DropDown(
-                                        countries, "Select the Country"),
+                                        countries, "Select the Country",1),
                                     Container(
                                       height: 20,
                                     ),
                                     Show_DropDown(
-                                        provinces, "Select the Provinces"),
+                                        provinces, "Select the Provinces",0),
                                     Container(
                                       height: 20,
                                     ),
