@@ -20,10 +20,6 @@ Tracker mobile app is used to track or fetch realtime updates about corona virus
   GET /v2/locations
 ```
 
-| Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
-| `api_key` | `string` | **Required**. Your API key |
-
 ## Run the App
 
 ```bash
