@@ -1,16 +1,43 @@
-# corona_virus_tracker
+# Corona Virus Tracker ( Flutter App - Hybrid )
 
-A new Flutter project.
+Tracker mobile app is used to track or fetch realtime updates about corona virus all over the world. Also Integrated the google map to locate the status of corresponding country or state in map.
 
-## Getting Started
+## Screenshots
 
-This project is a starting point for a Flutter application.
+![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
 
-A few resources to get you started if this is your first Flutter project:
+## Tech Stack
+1. Flutter
+2. State Management
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+## API Reference
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+#### Base Url : https://coronavirus-tracker-api.herokuapp.com
+
+#### Get all items
+
+```http
+  GET /v2/locations
+```
+
+| Parameter | Type     | Description                |
+| :-------- | :------- | :------------------------- |
+| `api_key` | `string` | **Required**. Your API key |
+
+## Run the App
+
+```bash
+  flutter run
+```
+
+## Build the Apk in Release State
+
+```bash
+  flutter build apk --release
+```
+    
+
+## Authors
+
+- [Ashish Arora](https://github.com/asharora/)
+
