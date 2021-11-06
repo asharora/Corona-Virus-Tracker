@@ -4,7 +4,7 @@ Tracker mobile app is used to track or fetch realtime updates about corona virus
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+<img src="https://user-images.githubusercontent.com/55990641/140610537-1351f49b-416f-412d-a6d5-f107667579f6.jpg" data-canonical-src="https://gyazo.com/eb5c5741b6a9a16c692170a41a49c858.png" width="200" height="400" />
 
 ## Tech Stack
 1. Flutter
